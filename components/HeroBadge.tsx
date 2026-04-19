@@ -13,7 +13,7 @@ export function HeroBadge({ onClick }: HeroBadgeProps) {
     >
       <ShineBorder
         borderWidth={1}
-        shineColor="#A07CFE"
+        shineColor="#5162f5"
         className="rounded-full"
       />
       <DIcons.Shapes className="h-5 p-1" /> Introducing PromptOps.

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:polar.sh)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

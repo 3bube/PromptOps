@@ -20,6 +20,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ExpandableCard,
+  ExpandableCardBody,
+  ExpandableCardContent,
+  ExpandableCardExpandContainer,
+} from "@/components/ui/expandable-card";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 
@@ -35,111 +41,122 @@ interface Template {
 const TEMPLATES: Template[] = [
   {
     id: "1",
-    title: "REST API Builder",
+    title: "REST API Code Reviewer",
     description:
-      "Generate a complete REST API with routes, controllers, and validation",
+      "Get a senior engineer's critique of your API design with prioritized fixes",
     category: "coding",
     prompt:
-      "Build a REST API with Express.js that includes CRUD operations, input validation with Zod, error handling middleware, and JWT authentication. Include proper TypeScript types and folder structure.",
+      "You are a senior backend engineer who values security, performance, and maintainability above all. Review the following REST API design as if you're a skeptical code reviewer preparing it for a production launch. For each issue you find: (1) label it Critical / Important / Minor, (2) explain the exact risk it creates, (3) show a corrected code snippet. End with a prioritized fix list and one architectural change that would make the biggest long-term difference.",
     icon: Code,
   },
   {
     id: "2",
-    title: "React Component Generator",
-    description: "Create reusable React components with TypeScript and tests",
+    title: "React Component Architect",
+    description:
+      "Design a bulletproof React component with accessibility, tests, and edge cases",
     category: "coding",
     prompt:
-      "Create a reusable React component with TypeScript props interface, proper accessibility attributes, responsive design with Tailwind CSS, and unit tests using React Testing Library.",
+      "You are a React expert who has been burned by accessibility lawsuits and flaky tests. Design a production-ready React component for [describe the component]. Deliver: (1) the full TypeScript component with props interface and JSDoc, (2) every ARIA attribute needed and why, (3) three edge cases most developers miss and how to handle them, (4) unit tests for the happy path and each edge case using React Testing Library. Flag any performance pitfalls in your implementation.",
     icon: Code,
   },
   {
     id: "3",
-    title: "SEO Blog Post",
-    description: "Write an SEO-optimized blog post with meta descriptions",
+    title: "SEO Article That Actually Ranks",
+    description:
+      "Write a search-optimized article with three headline variants and a meta description",
     category: "writing",
     prompt:
-      "Write a 1500-word SEO-optimized blog post. Include a compelling headline, meta description under 160 characters, proper H2/H3 structure, internal linking suggestions, and a clear CTA. Target keyword density of 1-2%.",
+      "You are an SEO strategist who has ranked dozens of articles on page one. Write a 1500-word article targeting the keyword [your keyword] for an audience of [describe reader]. Structure: hook (first 100 words must make them stay), three H2 sections each answering a different search intent, one data point or statistic per section, and a CTA in the final paragraph. Then deliver: (A) three headline options — curiosity-gap, benefit-driven, and number-based, (B) a meta description under 155 characters, (C) two internal linking suggestions. Do not keyword-stuff; write for humans first.",
     icon: Pen,
   },
   {
     id: "4",
-    title: "Technical Documentation",
-    description: "Generate comprehensive technical docs for your project",
+    title: "Docs That Developers Actually Read",
+    description:
+      "Write technical documentation at three depth levels for different readers",
     category: "writing",
     prompt:
-      "Write technical documentation that includes an overview, getting started guide, API reference with code examples, configuration options, troubleshooting section, and FAQ. Use clear, concise language suitable for developers.",
+      "You are a technical writer who believes documentation fails when it talks to no one in particular. Write documentation for [your feature or API] at three depth levels in one document: (1) a 3-sentence TL;DR for the developer who's skimming, (2) a getting-started guide with copy-paste code for the developer who has 10 minutes, (3) a full reference section with every parameter, error code, and edge case for the developer who is debugging at 2am. Flag any assumption you had to make about the system — those are gaps the team needs to fill.",
     icon: FileText,
   },
   {
     id: "5",
-    title: "Sales Data Analysis",
-    description: "Analyze quarterly sales data with actionable insights",
+    title: "Sales Data Interrogator",
+    description:
+      "Surface the uncomfortable patterns in your sales data most reports miss",
     category: "analysis",
     prompt:
-      "Analyze the provided sales data. Include: revenue trends, top-performing products/regions, year-over-year comparisons, seasonal patterns, customer segmentation insights, and 3 actionable recommendations backed by the data.",
+      "You are a data analyst who is paid to find what leadership doesn't want to see. Analyze the following sales data: [paste data or describe it]. Go beyond surface trends. Identify: (1) the metric that looks healthy but is masking a problem, (2) the customer segment that is quietly churning, (3) the second-order effect of the top-line trend that nobody is discussing. Present each finding as: Observation → Why it matters → What happens if ignored → Recommended action. End with the one question this data cannot answer but absolutely should.",
     icon: BarChart3,
   },
   {
     id: "6",
-    title: "Competitor Analysis",
-    description: "Deep-dive competitor research with strategic recommendations",
+    title: "Steelman Competitor Analysis",
+    description:
+      "Argue your toughest competitor's case before finding your real edge",
     category: "analysis",
     prompt:
-      "Conduct a competitor analysis covering: market positioning, pricing strategy, product features comparison, SWOT analysis, content strategy evaluation, and strategic recommendations for differentiation.",
+      "You are a strategist preparing a board presentation. Analyze [your competitor] against [your product]. First, steelman your competitor — argue their case as their best advocate would, including why a smart customer would choose them over you. Then shift perspective: identify the one thing they cannot do without breaking their business model. Build your differentiation strategy around that constraint. Deliver a one-page summary: their genuine strengths, your genuine weaknesses, the single wedge where you can win, and the three moves to take in the next 90 days.",
     icon: Briefcase,
   },
   {
     id: "7",
-    title: "Product Launch Email Sequence",
-    description: "Multi-email campaign for launching a new product",
+    title: "Launch Email Sequence",
+    description:
+      "5-email launch campaign with A/B subject lines and psychology-driven CTAs",
     category: "marketing",
     prompt:
-      "Create a 5-email product launch sequence: teaser, announcement, features deep-dive, social proof, and last-chance. Include subject lines with A/B variants, preheader text, and clear CTAs for each email. Tone: exciting but not pushy.",
+      "You are an email copywriter who has launched products to cold lists and warm audiences. Write a 5-email product launch sequence for [your product] targeting [your audience]. Emails: (1) problem agitation — no product mention, (2) story-driven reveal, (3) feature-to-benefit translation, (4) objection-busting social proof, (5) urgency close. For each email include: two A/B subject lines with different psychological triggers labeled (curiosity / benefit / urgency / fear of missing out), preheader text, body copy, and a CTA. Note the one sentence in each email where most readers will decide to stop reading — make it impossible to stop there.",
     icon: Mail,
   },
   {
     id: "8",
-    title: "Social Media Campaign",
-    description: "Full social media content plan with captions and hashtags",
+    title: "Platform-Native Content Plan",
+    description:
+      "2-week content calendar written for how each platform's algorithm actually works",
     category: "marketing",
     prompt:
-      "Create a 2-week social media campaign plan covering Instagram, Twitter/X, and LinkedIn. Include: daily post topics, caption copy, relevant hashtags, optimal posting times, and engagement prompts. Align with brand voice: professional yet approachable.",
+      "You are a social media strategist who understands that content that works on LinkedIn dies on Twitter and vice versa. Create a 2-week content plan for [your brand/product] across Instagram, LinkedIn, and Twitter/X. For each platform write natively — different hook style, different optimal length, different CTA. Include: the post angle, opening line (critical — this determines reach), full caption or thread, hashtag strategy (with reasoning, not just a list), and the one engagement question that will generate real replies, not just likes. Flag which posts should be boosted with paid spend and why.",
     icon: Megaphone,
   },
   {
     id: "9",
-    title: "Startup Idea Validator",
-    description: "Evaluate and refine a startup concept systematically",
+    title: "Startup Idea Devil's Advocate",
+    description:
+      "Pressure-test your idea the way a skeptical VC would before you build anything",
     category: "creative",
     prompt:
-      "Evaluate this startup idea by analyzing: problem-solution fit, target market size (TAM/SAM/SOM), competitive landscape, unique value proposition, potential revenue models, key risks, and a lean MVP scope. Provide a go/no-go recommendation with reasoning.",
+      "You are a venture capitalist who has seen 10,000 pitches and funds fewer than 1%. I am going to pitch you my startup idea: [your idea]. Your job is to destroy it — find the assumption I am most in love with and explain exactly why it's wrong. Then identify the one version of this idea that could actually work (it may be a pivot). Deliver: (1) the fatal flaw in the original thesis, (2) the market insight I'm missing, (3) the reformulated idea with a defensible wedge, (4) the first three things I should do to validate it for under $500 and 30 days. Be honest, not encouraging.",
     icon: Lightbulb,
   },
   {
     id: "10",
-    title: "Brand Story Creator",
-    description: "Craft a compelling brand narrative and messaging framework",
+    title: "Brand Voice Architect",
+    description:
+      "Build a brand voice with concrete do/don't examples, not vague adjectives",
     category: "creative",
     prompt:
-      "Create a brand story framework including: origin story, mission and vision statements, brand values (3-5), brand voice guidelines with do/don't examples, elevator pitch (30 seconds), and tagline options (3 variants).",
+      "You are a brand strategist who hates brand guidelines that say things like 'we are authentic and human.' Build a brand voice framework for [your brand] that a new hire could use on day one without any coaching. Deliver: (1) three voice dimensions — each defined by a specific do and don't example using real sentences, not adjectives, (2) the one topic the brand should never joke about and why, (3) three rewrites of this generic sentence in the brand's voice: 'We help businesses grow with our software,' (4) a tagline shortlist — three options in completely different styles with the reasoning for each.",
     icon: Heart,
   },
   {
     id: "11",
-    title: "Course Curriculum Designer",
-    description: "Design a structured online course with modules and lessons",
+    title: "Course That Gets Completed",
+    description:
+      "Design a curriculum around how people actually learn, not how schools teach",
     category: "creative",
     prompt:
-      "Design an online course curriculum with: learning objectives, 6-8 modules with 3-5 lessons each, key takeaways per module, suggested assignments/exercises, assessment rubric, and recommended supplementary resources.",
+      "You are a learning designer who optimizes for course completion rates, not enrollment numbers. Design a course on [your topic] for [your target learner — describe their current skill level and their goal]. The course must be structured around the forgetting curve: short modules, spaced repetition, and application before theory. Deliver: (1) course promise — what will the student be able to do on day one after finishing, (2) 6 modules with a one-sentence outcome for each (what can they do, not what will they learn), (3) one real-world mini-project per module, (4) the three moments where students typically quit — and what to put at each to keep them going.",
     icon: GraduationCap,
   },
   {
     id: "12",
-    title: "Database Schema Designer",
-    description: "Design a normalized database schema with relationships",
+    title: "Database Schema Auditor",
+    description:
+      "Design or review a schema with performance, scalability, and migration safety in mind",
     category: "coding",
     prompt:
-      "Design a normalized PostgreSQL database schema. Include: table definitions with proper data types, primary/foreign keys, indexes for common queries, junction tables for many-to-many relationships, and migration SQL. Follow 3NF normalization.",
+      "You are a database architect who has been called in to fix schemas that brought down production systems. Design a PostgreSQL schema for [describe your data model and scale]. For every design decision, state the alternative you rejected and why. Deliver: (1) full table definitions with data types, constraints, and indexes, (2) the three queries this schema will run most often — show the execution plan reasoning, (3) the one denormalization you would make and the trade-off it creates, (4) migration SQL that is safe to run on a live database without downtime, (5) the first thing that will break at 10x current scale and how to prevent it now.",
     icon: Code,
   },
 ];
@@ -179,7 +196,7 @@ const Templates = () => {
 
   const handleUse = (template: Template) => {
     router.push(
-      `/?prompt=${encodeURIComponent(template.prompt)}&category=${template.category}`,
+      `/?prompt=${encodeURIComponent(template.prompt)}&category=${template.category}#prompt-card`,
     );
   };
 
@@ -187,7 +204,7 @@ const Templates = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="max-w-5xl mx-auto px-6 pt-28 pb-24">
+      <main className="mx-auto px-4 sm:px-6 pt-20 pb-24">
         {/* Header */}
         <div className="mb-10">
           <Button
@@ -241,55 +258,87 @@ const Templates = () => {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((template) => (
-            <div
-              key={template.id}
-              className="card-elevated rounded-2xl p-6 flex flex-col gap-4 group hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <template.icon className="w-5 h-5 text-primary" />
+            <ExpandableCard key={template.id}>
+              <ExpandableCardBody className="card-elevated rounded-2xl p-6 gap-4 group hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <template.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground leading-tight mb-1">
+                      {template.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {template.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground leading-tight mb-1">
-                    {template.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {template.description}
-                  </p>
-                </div>
-              </div>
 
-              <div className="bg-surface-sunken rounded-xl p-3 text-xs text-muted-foreground leading-relaxed line-clamp-3 font-mono">
-                {template.prompt}
-              </div>
-
-              <div className="flex items-center gap-2 mt-auto pt-1">
-                <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-secondary text-secondary-foreground capitalize">
-                  {template.category}
-                </span>
-                <div className="ml-auto flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-3 rounded-lg"
-                    onClick={() => handleCopy(template)}
-                  >
-                    {copiedId === template.id ? (
-                      <Check className="w-3.5 h-3.5 text-primary" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-8 px-4 rounded-lg"
-                    onClick={() => handleUse(template)}
-                  >
-                    Use
-                  </Button>
+                <div className="bg-surface-sunken rounded-xl p-3 text-xs text-muted-foreground leading-relaxed line-clamp-3 font-mono">
+                  {template.prompt}
                 </div>
-              </div>
-            </div>
+
+                <div className="flex items-center gap-2 mt-auto pt-1">
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-secondary text-secondary-foreground capitalize">
+                    {template.category}
+                  </span>
+                  <div className="ml-auto flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-3 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(template);
+                      }}
+                    >
+                      {copiedId === template.id ? (
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-8 px-4 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUse(template);
+                      }}
+                    >
+                      Use
+                    </Button>
+                  </div>
+                </div>
+              </ExpandableCardBody>
+
+              <ExpandableCardExpandContainer>
+                <ExpandableCardContent>
+                  <div className="flex items-center justify-between mb-3 pr-8">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Prompt
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg"
+                      onClick={() => handleCopy(template)}
+                    >
+                      {copiedId === template.id ? (
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="bg-surface-sunken rounded-xl p-4">
+                    <p className="font-mono text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {template.prompt}
+                    </p>
+                  </div>
+                </ExpandableCardContent>
+              </ExpandableCardExpandContainer>
+            </ExpandableCard>
           ))}
         </div>
 

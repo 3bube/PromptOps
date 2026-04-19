@@ -17,15 +17,16 @@ const PromptCard = ({
     message: string;
     files: any[];
     pastedContent: any[];
-    model: string;
-    isThinkingEnabled: boolean;
   }) => {
     onInputChange(data.message);
     onGenerateAndRun();
   };
 
   return (
-    <div className="card-elevated rounded-3xl p-8 glow-primary animate-fade-in-scale">
+    <div
+      id="prompt-card"
+      className="card-elevated rounded-2xl sm:rounded-3xl p-4 sm:p-8 glow-primary animate-fade-in-scale"
+    >
       <ClaudeChatInput
         value={inputValue}
         onChange={onInputChange}

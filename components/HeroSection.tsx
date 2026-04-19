@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { renderCanvas } from "@/components/ui/canvas";
 import { DIcons } from "dicons";
 import { Button } from "@/components/ui/button";
 import { HeroBadge } from "@/components/HeroBadge";
+import { useRouter } from "next/navigation";
 
 interface HeroSectionProps {
   onScrollToApp: () => void;
@@ -20,6 +20,8 @@ const HeroSection = ({ onScrollToApp }: HeroSectionProps) => {
     }
   }, []);
 
+  const router = useRouter();
+
   return (
     <section id="home" className="relative pb-16 overflow-hidden">
       <div className="animation-delay-8 animate-fadeIn mt-10 flex flex-col items-center justify-center px-4 text-center md:mt-20">
@@ -30,7 +32,7 @@ const HeroSection = ({ onScrollToApp }: HeroSectionProps) => {
         <div className="mb-10 mt-4 md:mt-6 z-10 w-full max-w-6xl mx-auto">
           <div className="px-2">
             <div className="border-border relative mx-auto h-full max-w-7xl border p-6 [mask-image:radial-gradient(800rem_96rem_at_center,white,transparent)] md:px-12 md:py-20">
-              <h1 className="flex select-none flex-col px-3 py-2 text-center text-5xl font-semibold leading-none tracking-tight md:flex-col md:text-8xl lg:flex-row lg:text-8xl">
+              <h1 className="flex select-none flex-col px-3 py-2 text-center text-4xl font-semibold leading-none tracking-tight sm:text-5xl md:flex-col md:text-7xl lg:flex-row lg:text-8xl">
                 <DIcons.Plus
                   strokeWidth={4}
                   className="text-muted-foreground/30 absolute -left-5 -top-5 h-10 w-10"
@@ -69,11 +71,15 @@ const HeroSection = ({ onScrollToApp }: HeroSectionProps) => {
             Generate, refine, and execute prompts instantly. Craft structured
             prompts that deliver consistent, high-quality results.
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 px-6 sm:px-0">
             <Button variant="default" size="lg" onClick={onScrollToApp}>
               Start Creating
             </Button>
-            <Button variant="outline" size="lg">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => router.push("/templates")}
+            >
               View Examples
             </Button>
           </div>

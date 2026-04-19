@@ -9,7 +9,6 @@ import {
   Check,
   Archive,
   Mic,
-  Brain,
   Shuffle,
 } from "lucide-react";
 
@@ -19,6 +18,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  PROMPT_TYPES,
+  FILE_UPLOAD_CONFIG,
+  validateFile,
+  getAllAcceptedExtensions,
+} from "@/constants";
 
 /* --- ICONS --- */
 export const Icons = {
@@ -43,7 +48,6 @@ export const Icons = {
   // Using Lucide React for premium, consistent icons
   Plus: Plus,
   Mic: Mic,
-  Brain: Brain,
   Thinking: (props: React.SVGProps<SVGSVGElement>) => (
     <svg
       width="20"
@@ -206,121 +210,7 @@ const PastedContentCard: React.FC<PastedContentCardProps> = ({
 };
 
 // 3. Model Selector
-interface Model {
-  id: string;
-  name: string;
-  description: string;
-  badge?: string;
-}
-
-interface ModelSelectorProps {
-  models: Model[];
-  selectedModel: string;
-  onSelect: (modelId: string) => void;
-}
-
-const ModelSelector: React.FC<ModelSelectorProps> = ({
-  models,
-  selectedModel,
-  onSelect,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const currentModel = models.find((m) => m.id === selectedModel) || models[0];
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex items-center justify-center relative shrink-0 transition font-base duration-300 ease-[cubic-bezier(0.165,0.85,0.45,1)] h-8 rounded-xl px-3 min-w-[4rem] active:scale-[0.98] whitespace-nowrap !text-xs pl-2.5 pr-2 gap-1 
-                ${
-                  isOpen
-                    ? "bg-muted text-foreground dark:bg-[#454540] dark:text-[#ECECEC]"
-                    : "text-foreground hover:text-foreground hover:bg-muted dark:text-[#B4B4B4] dark:hover:text-[#ECECEC] dark:hover:bg-[#454540]"
-                }`}
-      >
-        <div className="font-ui inline-flex gap-[3px] text-[14px] h-[14px] leading-none items-baseline">
-          <div className="flex items-center gap-[4px]">
-            <div className="whitespace-nowrap select-none font-medium">
-              {currentModel.name}
-            </div>
-          </div>
-        </div>
-        <div
-          className="flex items-center justify-center opacity-75"
-          style={{ width: "20px", height: "20px" }}
-        >
-          <Icons.SelectArrow
-            className={`shrink-0 opacity-75 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          />
-        </div>
-      </button>
-
-      {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 w-[260px] bg-background dark:bg-[#212121] border border-[#DDDDDD] dark:border-[#30302E] rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col p-1.5 animate-fade-in origin-bottom-right">
-          {models.map((model) => (
-            <button
-              key={model.id}
-              onClick={() => {
-                onSelect(model.id);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-3 py-2.5 rounded-xl flex items-start justify-between group transition-colors hover:bg-muted dark:hover:bg-[#30302E]`}
-            >
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-foreground dark:text-[#ECECEC]">
-                    {model.name}
-                  </span>
-                  {model.badge && (
-                    <span
-                      className={`px-1.5 py-[1px] rounded-full text-[10px] font-medium border ${
-                        model.badge === "Upgrade"
-                          ? "border-blue-200 text-blue-600 bg-background dark:border-blue-500/30 dark:text-blue-400 dark:bg-blue-500/10"
-                          : "border-border text-foreground"
-                      }`}
-                    >
-                      {model.badge}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] text-foreground dark:text-[#999999]">
-                  {model.description}
-                </span>
-              </div>
-              {selectedModel === model.id && (
-                <Icons.Check className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-1" />
-              )}
-            </button>
-          ))}
-
-          <div className="h-px bg-muted dark:bg-[#30302E] my-1 mx-2" />
-
-          <button className="w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between group transition-colors hover:bg-muted dark:hover:bg-[#30302E] text-foreground dark:text-[#ECECEC]">
-            <span className="text-[13px] font-semibold">More models</span>
-            <Icons.SelectArrow className="w-4 h-4 -rotate-90 text-foreground dark:text-[#999999]" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// 4. Main Chat Input Component
+// 3. Main Chat Input Component
 export interface ClaudeChatInputProps {
   value?: string;
   onChange?: (value: string) => void;
@@ -328,8 +218,6 @@ export interface ClaudeChatInputProps {
     message: string;
     files: AttachedFile[];
     pastedContent: any[];
-    model: string;
-    isThinkingEnabled: boolean;
   }) => void;
   isLoading?: boolean;
 }
@@ -346,8 +234,7 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [pastedContent, setPastedContent] = useState<any[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("sonnet-4.5");
-  const [isThinkingEnabled, setIsThinkingEnabled] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -363,24 +250,6 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
     }
   };
 
-  const models = [
-    {
-      id: "opus-4.5",
-      name: "Opus 4.5",
-      description: "Most capable for complex work",
-    },
-    {
-      id: "sonnet-4.5",
-      name: "Sonnet 4.5",
-      description: "Best for everyday tasks",
-    },
-    {
-      id: "haiku-4.5",
-      name: "Haiku 4.5",
-      description: "Fastest for quick answers",
-    },
-  ];
-
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -391,49 +260,70 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
   }, [message]);
 
   // File Handling
-  const handleFiles = useCallback((newFilesList: FileList | File[]) => {
-    const newFiles = Array.from(newFilesList).map((file) => {
-      const isImage =
-        file.type.startsWith("image/") ||
-        /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
-      return {
-        id: Math.random().toString(36).substr(2, 9),
-        file,
-        type: isImage
-          ? "image/unknown"
-          : file.type || "application/octet-stream", // Force image type if detected by extension
-        preview: isImage ? URL.createObjectURL(file) : null,
-        uploadStatus: "pending",
-      };
-    });
+  const handleFiles = useCallback(
+    (newFilesList: FileList | File[]) => {
+      setFileError(null);
+      const validFiles: AttachedFile[] = [];
 
-    // Simulate Upload
-    setFiles((prev) => [...prev, ...newFiles]);
+      Array.from(newFilesList).forEach((file) => {
+        // Validate file
+        const validation = validateFile(file);
+        if (!validation.valid) {
+          setFileError(validation.error || "Invalid file");
+          return;
+        }
 
-    // Dynamic Feedback Message
-    setMessage((prev) => {
-      if (prev) return prev;
-      if (newFiles.length === 1) {
-        const f = newFiles[0];
-        if (f.type.startsWith("image/")) return "Analyzed image...";
-        return "Analyzed document...";
-      }
-      return `Analyzed ${newFiles.length} files...`;
-    });
+        // Check max files limit
+        if (validFiles.length + files.length >= FILE_UPLOAD_CONFIG.maxFiles) {
+          setFileError(`Maximum ${FILE_UPLOAD_CONFIG.maxFiles} files allowed`);
+          return;
+        }
 
-    newFiles.forEach((f) => {
-      setTimeout(
-        () => {
-          setFiles((prev) =>
-            prev.map((p) =>
-              p.id === f.id ? { ...p, uploadStatus: "complete" } : p,
-            ),
-          );
-        },
-        800 + Math.random() * 1000,
-      );
-    });
-  }, []);
+        const isImage =
+          file.type.startsWith("image/") ||
+          /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
+        validFiles.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file,
+          type: isImage
+            ? "image/unknown"
+            : file.type || "application/octet-stream",
+          preview: isImage ? URL.createObjectURL(file) : null,
+          uploadStatus: "pending",
+        });
+      });
+
+      if (validFiles.length === 0) return;
+
+      // Add valid files
+      setFiles((prev) => [...prev, ...validFiles]);
+
+      // Dynamic Feedback Message
+      setMessage((prev) => {
+        if (prev) return prev;
+        if (validFiles.length === 1) {
+          const f = validFiles[0];
+          if (f.type.startsWith("image/")) return "Analyzed image...";
+          return "Analyzed document...";
+        }
+        return `Analyzed ${validFiles.length} files...`;
+      });
+
+      validFiles.forEach((f) => {
+        setTimeout(
+          () => {
+            setFiles((prev) =>
+              prev.map((p) =>
+                p.id === f.id ? { ...p, uploadStatus: "complete" } : p,
+              ),
+            );
+          },
+          800 + Math.random() * 1000,
+        );
+      });
+    },
+    [files.length, setMessage],
+  );
 
   // Drag & Drop
   const onDragOver = (e: React.DragEvent) => {
@@ -491,8 +381,6 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
       message,
       files,
       pastedContent,
-      model: selectedModel,
-      isThinkingEnabled,
     });
     setMessage("");
     setFiles([]);
@@ -528,6 +416,12 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
       >
         <div className="flex flex-col px-3 pt-3 pb-2 gap-2">
           {/* 1. Artifacts (Files & Pastes) - Rendered ABOVE text input */}
+          {fileError && (
+            <div className="px-1 py-2 mb-1 text-xs text-destructive bg-destructive/10 rounded-lg border border-destructive/30 flex items-center gap-2">
+              <Icons.X className="w-3 h-3 flex-shrink-0" />
+              {fileError}
+            </div>
+          )}
           {(files.length > 0 || pastedContent.length > 0) && (
             <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-1">
               {pastedContent.map((content) => (
@@ -593,116 +487,32 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
                     <Shuffle className="w-4 h-4 text-muted-foreground" />
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Standard
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Catch-all for any task
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Research
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Analyze, investigate, summarize
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Writing
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Blogs, emails, articles & more
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Planning
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Explore, strategize, figure it out
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-center justify-between px-3 py-2 rounded-xl cursor-pointer bg-muted text-foreground focus:bg-muted">
-                    <div className="flex flex-row items-baseline gap-2">
-                      <span className="font-medium text-sm">Agent</span>
-                      <span className="text-xs text-muted-foreground">
-                        Custom GPT, persona, assistant
-                      </span>
-                    </div>
-                    <Check className="w-4 h-4" />
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Image
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Pictures, graphics, visuals
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Video
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Clips, animations, scenes
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Code
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Development, debugging, refactoring
-                    </span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem className="flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer hover:bg-muted">
-                    <span className="font-medium text-sm text-foreground">
-                      Automation
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Zapier, N8N, Make workflows
-                    </span>
-                  </DropdownMenuItem>
+                  {PROMPT_TYPES.map((item) => (
+                    <DropdownMenuItem
+                      key={item.label}
+                      className={`flex flex-row items-baseline gap-2 px-3 py-2 rounded-xl cursor-pointer ${
+                        item.isSelected
+                          ? "bg-muted text-foreground focus:bg-muted"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <div className="flex flex-row items-baseline gap-2">
+                        <span className="font-medium text-sm text-foreground">
+                          {item.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.description}
+                        </span>
+                      </div>
+                      {item.isSelected && <Check className="w-4 h-4" />}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
             {/* Right Tools */}
             <div className="flex flex-row items-center gap-1">
-              {/* <button
-                className="inline-flex items-center justify-center relative shrink-0 transition font-base h-8 rounded-xl px-3 text-xs gap-1 text-foreground hover:bg-muted mr-1"
-                type="button"
-              >
-                <div className="font-medium whitespace-nowrap">Basic Model</div>
-                <Icons.SelectArrow className="w-3 h-3 opacity-75" />
-              </button> */}
-
-              <button
-                onClick={() => setIsThinkingEnabled(!isThinkingEnabled)}
-                className={`transition-all duration-200 h-8 w-8 flex items-center justify-center rounded-lg active:scale-95
-                  ${
-                    isThinkingEnabled
-                      ? "text-accent bg-accent/10"
-                      : "text-foreground hover:text-foreground hover:bg-muted"
-                  }
-                `}
-                aria-pressed={isThinkingEnabled}
-                title="Extended thinking"
-              >
-                <Icons.Brain className="w-4 h-4" />
-              </button>
-
               {/* <button
                 className="inline-flex items-center justify-center relative shrink-0 transition-colors duration-200 h-8 w-8 rounded-lg active:scale-95 text-foreground hover:bg-muted"
                 type="button"
@@ -711,14 +521,14 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
                 <Icons.Mic className="w-4 h-4" />
               </button> */}
 
-              {/* <button
+              <button
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center relative shrink-0 transition-colors duration-200 h-8 w-8 rounded-lg active:scale-95 text-foreground hover:bg-muted mr-1"
+                className="inline-flex items-center justify-center relative shrink-0 transition-colors duration-200 h-8 w-8 rounded-lg active:scale-95 text-foreground hover:bg-muted"
                 type="button"
                 title="Attach file"
               >
                 <Icons.Plus className="w-5 h-5" />
-              </button> */}
+              </button>
 
               {/* Send Button */}
               <button
@@ -728,7 +538,7 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
                   inline-flex items-center justify-center relative shrink-0 transition-colors h-8 w-8 rounded-xl active:scale-95
                   ${
                     hasContent && !isLoading
-                      ? "bg-accent text-primary-foreground hover:bg-accent-hover shadow-md"
+                      ? "bg-accent text-primary-foreground hover:bg-accent/75 shadow-md"
                       : "bg-accent/30 text-primary-foreground/60 cursor-default"
                   }
                 `}
@@ -755,15 +565,16 @@ export const ClaudeChatInput: React.FC<ClaudeChatInputProps> = ({
       )}
 
       {/* Hidden Input */}
-      {/* <input
+      <input
         ref={fileInputRef}
         type="file"
         multiple
+        accept={getAllAcceptedExtensions().join(",")}
         onChange={(e) => {
           if (e.target.files) handleFiles(e.target.files);
           e.target.value = "";
         }}
-      /> */}
+      />
 
       <div className="text-center mt-4">
         <p className="text-xs text-foreground">
