@@ -59,10 +59,14 @@ const TIERS = [
 const PricingPage = () => {
   const { user } = useAuth();
 
-  const checkoutUrl = (productId: string | null | undefined) => {
-    if (!productId) return "#";
-    const email = user?.email ? `&customerEmail=${encodeURIComponent(user.email)}` : "";
-    return `/api/polar/checkout?products=${productId}${email}`;
+  const handleUpgrade = (productId: string | null | undefined) => {
+    if (!productId) return;
+    if (!user) {
+      window.location.href = "/auth?next=/pricing";
+      return;
+    }
+    const email = `&customerEmail=${encodeURIComponent(user.email!)}`;
+    window.location.href = `/api/polar/checkout?products=${productId}${email}`;
   };
 
   return (
@@ -138,17 +142,13 @@ const PricingPage = () => {
               </ul>
 
               <Button
-                asChild={!tier.ctaDisabled}
                 variant={tier.highlight ? "hero" : "outline"}
                 size="lg"
                 className="w-full"
                 disabled={tier.ctaDisabled}
+                onClick={() => handleUpgrade(tier.productId)}
               >
-                {tier.ctaDisabled ? (
-                  <span>{tier.cta}</span>
-                ) : (
-                  <a href={checkoutUrl(tier.productId)}>{tier.cta}</a>
-                )}
+                {tier.cta}
               </Button>
             </motion.div>
           ))}
