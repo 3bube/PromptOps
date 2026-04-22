@@ -134,7 +134,10 @@ const PricingPage = () => {
 
               <ul className="flex flex-col gap-3 flex-1">
                 {tier.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/80">
+                  <li
+                    key={f}
+                    className="flex items-start gap-2.5 text-sm text-foreground/80"
+                  >
                     <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     {f}
                   </li>
@@ -142,7 +145,7 @@ const PricingPage = () => {
               </ul>
 
               <Button
-                variant={tier.highlight ? "hero" : "outline"}
+                variant={tier.highlight ? "default" : "outline"}
                 size="lg"
                 className="w-full"
                 disabled={tier.ctaDisabled}
