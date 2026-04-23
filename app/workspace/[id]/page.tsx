@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { WorkspaceSidebar } from "./components/WorkspaceSidebar";
 import { WorkspaceTopbar } from "./components/WorkspaceTopbar";
@@ -11,20 +11,41 @@ import { useWorkspaceData } from "./hooks/useWorkspaceData";
 import { useGenerateBlocks } from "./hooks/useGenerateBlocks";
 import type { Block } from "./types";
 
-function Workspace({ id, initDescription }: { id: string; initDescription: string | null }) {
+function Workspace({
+  id,
+  initDescription,
+}: {
+  id: string;
+  initDescription: string | null;
+}) {
   const [activeTab, setActiveTab] = useState("editor");
+  const [messageReloadKey, setMessageReloadKey] = useState(0);
+  const autoV1Created = useRef(false);
+
   const {
-    meta, blocks, variables, versions,
-    loading, error, saveStatus,
-    updateBlock, updateBlockTitle, reorderBlocks, deleteBlock, addBlock,
-    updateVariable, addVariable, deleteVariable,
-    saveVersion, restoreVersion,
+    meta,
+    blocks,
+    variables,
+    versions,
+    loading,
+    error,
+    saveStatus,
+    updateBlock,
+    updateBlockTitle,
+    reorderBlocks,
+    deleteBlock,
+    addBlock,
+    updateVariable,
+    addVariable,
+    deleteVariable,
+    saveVersion,
+    restoreVersion,
     setBlocks,
   } = useWorkspaceData(id);
 
   const handleBlocksUpdate = useCallback(
     (generated: Block[]) => setBlocks(() => generated),
-    [setBlocks]
+    [setBlocks],
   );
 
   // After generation completes, persist the blocks to DB via a regular update
@@ -33,10 +54,28 @@ function Workspace({ id, initDescription }: { id: string; initDescription: strin
     setBlocks((prev) => [...prev]);
   }, [setBlocks]);
 
-  const { start: startGeneration, stop: stopGeneration, isGenerating } = useGenerateBlocks({
+  const {
+    start: startGeneration,
+    stop: stopGeneration,
+    isGenerating,
+  } = useGenerateBlocks({
     onBlocksUpdate: handleBlocksUpdate,
     onComplete: handleGenerationComplete,
   });
+
+  // Auto-create v1 once blocks are saved and no versions exist yet
+  useEffect(() => {
+    if (
+      !loading &&
+      saveStatus === "saved" &&
+      blocks.length > 0 &&
+      versions.length === 0 &&
+      !autoV1Created.current
+    ) {
+      autoV1Created.current = true;
+      saveVersion("v1");
+    }
+  }, [loading, saveStatus, blocks.length, versions.length, saveVersion]);
 
   // Auto-start generation when workspace loads empty with an init description
   useEffect(() => {
@@ -52,7 +91,9 @@ function Workspace({ id, initDescription }: { id: string; initDescription: strin
     const lines: string[] = [`# Prompt: ${meta.name}\n`];
     if (variables.length) {
       lines.push(`## Variables\n`);
-      variables.forEach((v) => lines.push(`- \`{{${v.name}}}\` = \`${v.value}\``));
+      variables.forEach((v) =>
+        lines.push(`- \`{{${v.name}}}\` = \`${v.value}\``),
+      );
       lines.push("");
     }
     blocks.forEach((b) => {
@@ -86,8 +127,12 @@ function Workspace({ id, initDescription }: { id: string; initDescription: strin
     return (
       <div className="h-full w-full flex items-center justify-center bg-[#ffffff]">
         <div className="flex flex-col items-center gap-3 text-center px-6">
-          <p className="text-sm font-medium text-[#09090b]">Could not load prompt</p>
-          <p className="text-[12px] text-[#a1a1aa]">{error ?? "Prompt not found."}</p>
+          <p className="text-sm font-medium text-[#09090b]">
+            Could not load prompt
+          </p>
+          <p className="text-[12px] text-[#a1a1aa]">
+            {error ?? "Prompt not found."}
+          </p>
         </div>
       </div>
     );
@@ -99,7 +144,10 @@ function Workspace({ id, initDescription }: { id: string; initDescription: strin
         versions={versions}
         saveStatus={saveStatus}
         onSaveVersion={saveVersion}
-        onRestoreVersion={restoreVersion}
+        onRestoreVersion={async (versionId) => {
+          await restoreVersion(versionId);
+          setMessageReloadKey((k) => k + 1);
+        }}
       />
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -114,7 +162,12 @@ function Workspace({ id, initDescription }: { id: string; initDescription: strin
         <div className="flex flex-1 overflow-hidden">
           {activeTab === "editor" ? (
             <>
-              <AssistantPanel promptId={id} blocks={blocks} onBlocksChange={setBlocks} />
+              <AssistantPanel
+                promptId={id}
+                messageReloadKey={messageReloadKey}
+                blocks={blocks}
+                onBlocksChange={setBlocks}
+              />
               <PromptCanvas
                 promptName={meta.name}
                 blocks={blocks}

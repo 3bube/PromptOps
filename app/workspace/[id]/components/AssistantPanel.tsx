@@ -15,6 +15,7 @@ import { Message, MessageContent } from "@/components/ai-elements/message";
 
 interface AssistantPanelProps {
   promptId: string;
+  messageReloadKey?: number;
   blocks: Block[];
   onBlocksChange: (updater: (prev: Block[]) => Block[]) => void;
 }
@@ -79,6 +80,7 @@ function extractMentions(text: string, blocks: Block[]): Block[] {
 
 export function AssistantPanel({
   promptId,
+  messageReloadKey,
   blocks,
   onBlocksChange,
 }: AssistantPanelProps) {
@@ -92,9 +94,10 @@ export function AssistantPanel({
   const mirrorRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Load persisted messages on mount
+  // Load messages on mount and whenever a version is restored (messageReloadKey increments)
   useEffect(() => {
     async function loadMessages() {
+      setMessages([]);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data } = await (supabase as any)
         .from("prompt_messages")
@@ -104,7 +107,7 @@ export function AssistantPanel({
       if (data?.length) setMessages(data as ChatMessage[]);
     }
     loadMessages();
-  }, [promptId]);
+  }, [promptId, messageReloadKey]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowUp, Clock, Layers, Plus, LayoutTemplate } from "lucide-react";
@@ -61,7 +62,21 @@ function PromptThumbnail({
   );
 }
 
-export default function WorkspaceDashboard() {
+export default function WorkspacePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <WorkspaceDashboard />
+    </Suspense>
+  );
+}
+
+function WorkspaceDashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

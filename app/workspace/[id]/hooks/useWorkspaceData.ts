@@ -274,7 +274,14 @@ export function useWorkspaceData(promptId: string) {
       const userId = data.user?.id;
       if (!userId) return;
 
-      const snapshot = { blocks, variables };
+      // Include current messages in the snapshot so they restore with the version
+      const { data: msgs } = await (supabase as any)
+        .from("prompt_messages")
+        .select("role, content")
+        .eq("prompt_id", promptId)
+        .order("created_at", { ascending: true });
+
+      const snapshot = { blocks, variables, messages: msgs ?? [] };
       const { data: ver, error } = await (supabase as any)
         .from("prompt_versions")
         .insert({
@@ -320,20 +327,39 @@ export function useWorkspaceData(promptId: string) {
         const snap = data.snapshot as {
           blocks: Block[];
           variables: Variable[];
+          messages?: { role: string; content: string }[];
         };
         const snapBlocks = snap.blocks ?? [];
         const snapVars = snap.variables ?? [];
+        const snapMessages = snap.messages ?? [];
 
-        // Wipe all current blocks for this prompt then re-insert from snapshot
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Restore blocks
         await (supabase as any)
           .from("prompt_blocks")
           .delete()
           .eq("prompt_id", promptId);
-
         setBlocks(snapBlocks);
         setVariables(snapVars);
         await persist(promptId, snapBlocks, snapVars, setSaveStatus);
+
+        // Restore messages: wipe current and re-insert snapshot messages
+        await (supabase as any)
+          .from("prompt_messages")
+          .delete()
+          .eq("prompt_id", promptId);
+
+        if (snapMessages.length > 0) {
+          await (supabase as any)
+            .from("prompt_messages")
+            .insert(
+              snapMessages.map((m) => ({
+                prompt_id: promptId,
+                user_id: userId,
+                role: m.role,
+                content: m.content,
+              })),
+            );
+        }
       } else {
         console.error("restoreVersion: no snapshot found for", versionId, data);
       }

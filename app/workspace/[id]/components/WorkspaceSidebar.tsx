@@ -97,7 +97,7 @@ export function WorkspaceSidebar({
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#e4e4e7] bg-[#ffffff] text-xs font-medium text-[#71717a] hover:text-[#09090b] hover:border-[#d4d4d8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={12} />
-            Save version
+            Add Version
           </button>
 
           {/* History */}
