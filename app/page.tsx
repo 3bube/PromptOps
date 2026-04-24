@@ -118,15 +118,12 @@ export default function LandingPage() {
             <DemoMockup accentColor={a} />
             <UseCases accentColor={a} />
             <SocialProof accentColor={a} />
-            {tweaks.showPricing && <Pricing accentColor={a} />}
+            <Pricing accentColor={a} />
             <FAQ accentColor={a} />
             <CTABanner accentColor={a} />
           </main>
         </div>
         <Footer />
-        {tweaksOpen && (
-          <TweaksPanel tweaks={tweaks} updateTweak={updateTweak} />
-        )}
       </div>
     </>
   );

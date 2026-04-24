@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { WordmarkIcon } from "@/components/ui/header-2";
 import type { VersionEntry } from "../hooks/useWorkspaceData";
+import posthog from "posthog-js";
 
 type SaveStatus = "saved" | "saving" | "unsaved" | "error";
 
@@ -47,8 +48,8 @@ export function WorkspaceSidebar({
   const handleSave = async () => {
     setSaving(true);
     await onSaveVersion();
+    posthog.capture("version_saved", { version_count: versions.length + 1 });
     setSaving(false);
-    // Newly saved version becomes active
     if (versions[0]) setActiveVersionId(versions[0].id);
   };
 
@@ -57,6 +58,7 @@ export function WorkspaceSidebar({
     setRestoringId(versionId);
     try {
       await onRestoreVersion(versionId);
+      posthog.capture("version_restored", { version_id: versionId });
       setActiveVersionId(versionId);
     } finally {
       setRestoringId(null);
@@ -80,17 +82,12 @@ export function WorkspaceSidebar({
           className="shrink-0 p-1.5 rounded-md text-[#a1a1aa] hover:text-[#09090b] hover:bg-[#f4f4f5] transition-colors"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? (
-            <PanelLeftOpen size={15} />
-          ) : (
-            <PanelLeftClose size={15} />
-          )}
+          {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </button>
       </div>
 
       {!collapsed && (
         <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
-          {/* Save version button */}
           <button
             onClick={handleSave}
             disabled={saving || saveStatus === "saving"}
@@ -100,7 +97,6 @@ export function WorkspaceSidebar({
             Add Version
           </button>
 
-          {/* History */}
           <div>
             <div className="text-[10px] font-bold text-[#a1a1aa] uppercase tracking-wider mb-2 px-1">
               Version History
@@ -159,19 +155,14 @@ export function WorkspaceSidebar({
 
       {collapsed && <div className="flex-1" />}
 
-      {/* Save status dot when collapsed */}
+      {/* Save status */}
       {collapsed && saveStatus === "unsaved" && (
-        <div className="flex justify-center pb-2">
-          <div
-            className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"
-            title="Unsaved changes"
-          />
+        <div className="flex justify-center pb-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" title="Unsaved changes" />
         </div>
       )}
-
-      {/* Save status footer when expanded */}
       {!collapsed && saveStatus !== "saved" && (
-        <div className="px-4 py-1.5 border-t border-[#e4e4e7] shrink-0">
+        <div className="px-4 py-2 border-t border-[#e4e4e7] shrink-0">
           <span
             className={`text-[10px] ${
               saveStatus === "saving"

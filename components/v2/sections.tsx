@@ -3,6 +3,10 @@ import { Workspace } from "@/app/v2/page";
 import { motion, AnimatePresence } from "framer-motion";
 import CountUp from "react-countup";
 import { WordmarkIcon } from "@/components/ui/header-2";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import posthog from "posthog-js";
 
 const S = {
   bg: "#fafafa",
@@ -477,6 +481,8 @@ export function UseCases({ accentColor }: any) {
     },
   ];
   const t = tabs[active];
+
+  const router = useRouter();
   return (
     <section
       id="use-cases"
@@ -596,6 +602,7 @@ export function UseCases({ accentColor }: any) {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.transform = "translateY(0)")
                 }
+                onClick={() => router.push("/templates")}
               >
                 Browse {t.label} templates →
               </button>
@@ -647,7 +654,7 @@ export function UseCases({ accentColor }: any) {
                   >
                     {ex}
                   </span>
-                  <span
+                  {/* <span
                     style={{
                       marginLeft: "auto",
                       fontSize: 12,
@@ -658,7 +665,7 @@ export function UseCases({ accentColor }: any) {
                     }}
                   >
                     →
-                  </span>
+                  </span> */}
                 </div>
               ))}
             </div>
@@ -762,7 +769,7 @@ export function SocialProof({ accentColor }: any) {
           ))}
         </div>
 
-        <SectionHeading
+        {/* <SectionHeading
           align="center"
           label="Trusted by builders"
           title="Loved by the people who actually ship"
@@ -849,7 +856,7 @@ export function SocialProof({ accentColor }: any) {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
     </section>
   );
@@ -858,53 +865,70 @@ export function SocialProof({ accentColor }: any) {
 // ── Pricing ─────────────────────────────────────────────────
 export function Pricing({ accentColor }: any) {
   const accent = accentColor || S.accent;
-  const [annual, setAnnual] = useState(false);
+  const { user } = useAuth();
+  const PRO_PRODUCT_ID = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID;
+  const UNLIMITED_PRODUCT_ID =
+    process.env.NEXT_PUBLIC_POLAR_UNLIMITED_PRODUCT_ID;
+
+  const handleUpgrade = (
+    productId: string | null | undefined,
+    tierName?: string,
+  ) => {
+    if (!productId) return;
+    posthog.capture("upgrade_clicked", {
+      tier: tierName,
+      product_id: productId,
+      logged_in: !!user,
+    });
+    if (!user) {
+      window.location.href = "/auth?next=/pricing";
+      return;
+    }
+    const email = `&customerEmail=${encodeURIComponent(user.email!)}`;
+    window.location.href = `/api/polar/checkout?products=${productId}${email}`;
+  };
+
   const plans = [
     {
       name: "Free",
       price: 0,
-      desc: "Get started with the basics.",
-      features: [
-        "50 prompts / month",
-        "5 prompt templates",
-        "Prompt history (7 days)",
-        "Copy & export",
-        "Community support",
-      ],
-      cta: "Start free",
+      period: "forever",
+      desc: "Get started with prompt generation.",
+      limit: "5 generations / month",
+      features: ["All 6 categories", "Streaming output", "Prompt history"],
+      cta: "Current plan",
       popular: false,
+      productId: null,
     },
     {
       name: "Pro",
-      price: annual ? 9 : 12,
-      desc: "For power users and builders.",
+      price: 9,
+      period: "/month",
+      desc: "For creators who generate prompts daily.",
+      limit: "500 generations / month",
       features: [
-        "Unlimited prompts",
-        "500+ templates",
-        "Full history & search",
-        "Workflow prompt packs",
-        "One-click refinement",
-        "Priority support",
-        "API access (beta)",
+        "Everything in Free",
+        "500 generations per month",
+        "Priority generation",
       ],
-      cta: "Start Pro trial",
+      cta: "Upgrade to Pro",
       popular: true,
+      productId: PRO_PRODUCT_ID,
     },
     {
-      name: "Team",
-      price: annual ? 29 : 39,
-      desc: "Collaborate at scale.",
+      name: "Unlimited",
+      price: 19,
+      period: "/month",
+      desc: "No limits, no thinking about it.",
+      limit: "Unlimited generations",
       features: [
         "Everything in Pro",
-        "Up to 10 seats",
-        "Shared prompt library",
-        "Team collections",
-        "Admin dashboard",
-        "SSO (coming soon)",
-        "Dedicated support",
+        "Unlimited generations",
+        "Early access to new features",
       ],
-      cta: "Talk to us",
+      cta: "Upgrade to Unlimited",
       popular: false,
+      productId: UNLIMITED_PRODUCT_ID,
     },
   ];
   return (
@@ -919,74 +943,6 @@ export function Pricing({ accentColor }: any) {
           title="Simple, honest pricing"
           sub="Start free. Upgrade when you're ready. Cancel anytime."
         />
-        {/* Toggle */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 14,
-            marginBottom: 56,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 14,
-              color: !annual ? S.text : S.textMuted,
-              fontWeight: !annual ? 600 : 400,
-            }}
-          >
-            Monthly
-          </span>
-          <button
-            onClick={() => setAnnual((a) => !a)}
-            style={{
-              width: 44,
-              height: 24,
-              borderRadius: 12,
-              border: "none",
-              background: annual ? accent : "#d4d4d8",
-              cursor: "pointer",
-              position: "relative",
-              transition: "background 0.2s",
-            }}
-          >
-            <div
-              style={{
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-                background: "#fff",
-                position: "absolute",
-                top: 3,
-                left: annual ? 23 : 3,
-                transition: "left 0.2s",
-              }}
-            />
-          </button>
-          <span
-            style={{
-              fontSize: 14,
-              color: annual ? S.text : S.textMuted,
-              fontWeight: annual ? 600 : 400,
-            }}
-          >
-            Annual{" "}
-            <span
-              style={{
-                fontSize: 11,
-                color: "#10b981",
-                background: "rgba(16,185,129,0.1)",
-                border: "1px solid rgba(16,185,129,0.2)",
-                borderRadius: 8,
-                padding: "2px 7px",
-                marginLeft: 4,
-              }}
-            >
-              Save 25%
-            </span>
-          </span>
-        </div>
         <div
           style={{
             display: "grid",
@@ -1072,13 +1028,25 @@ export function Pricing({ accentColor }: any) {
                   >
                     ${plan.price}
                   </span>
-                  {plan.price > 0 && (
-                    <span style={{ fontSize: 14, color: S.textMuted }}>
-                      /mo
-                    </span>
-                  )}
+                  <span style={{ fontSize: 14, color: S.textMuted }}>
+                    {plan.period}
+                  </span>
                 </div>
                 <p style={{ fontSize: 13, color: S.textMuted }}>{plan.desc}</p>
+              </div>
+              <div
+                style={{
+                  background: `${accent}10`,
+                  border: `1px solid ${accent}20`,
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  fontSize: 12,
+                  color: accent,
+                  fontWeight: 600,
+                  textAlign: "center",
+                }}
+              >
+                {plan.limit}
               </div>
               <div style={{ height: 1, background: "#e4e4e7" }} />
               <div
@@ -1127,6 +1095,8 @@ export function Pricing({ accentColor }: any) {
                 ))}
               </div>
               <button
+                disabled={!plan.productId}
+                onClick={() => handleUpgrade(plan.productId, plan.name)}
                 style={{
                   background: plan.popular ? accent : "transparent",
                   color: plan.popular ? "#fff" : S.text,
@@ -1135,20 +1105,21 @@ export function Pricing({ accentColor }: any) {
                   padding: "13px",
                   fontSize: 14,
                   fontWeight: 600,
-                  cursor: "pointer",
+                  cursor: plan.productId ? "pointer" : "default",
                   fontFamily: "inherit",
                   transition: "all 0.2s",
                   marginTop: 8,
                   boxShadow: plan.popular ? `0 6px 20px ${accent}45` : "none",
+                  opacity: !plan.productId ? 0.6 : 1,
                 }}
                 onMouseEnter={(e) => {
-                  if (!plan.popular) {
+                  if (!plan.popular && plan.productId) {
                     e.currentTarget.style.borderColor = "#a1a1aa";
                     e.currentTarget.style.background = "#ffffff";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!plan.popular) {
+                  if (!plan.popular && plan.productId) {
                     e.currentTarget.style.borderColor = "#d4d4d8";
                     e.currentTarget.style.background = "transparent";
                   }
@@ -1295,6 +1266,7 @@ export function FAQ({ accentColor }: any) {
 // ── CTABanner ───────────────────────────────────────────────
 export function CTABanner({ accentColor }: any) {
   const accent = accentColor || S.accent;
+  const router = useRouter();
   return (
     <section
       className="rounded-bl-2xl rounded-br-2xl"
@@ -1385,32 +1357,9 @@ export function CTABanner({ accentColor }: any) {
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.boxShadow = `0 8px 28px ${accent}55`;
               }}
+              onClick={() => router.push("/auth")}
             >
               Get started free →
-            </button>
-            <button
-              style={{
-                background: "transparent",
-                color: S.text,
-                border: "1px solid #d4d4d8",
-                borderRadius: 10,
-                padding: "15px 32px",
-                fontSize: 16,
-                fontWeight: 500,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#a1a1aa";
-                e.currentTarget.style.background = "#ffffff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#d4d4d8";
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              View pricing
             </button>
           </div>
           <p style={{ marginTop: 24, fontSize: 13, color: S.textMuted }}>
@@ -1427,9 +1376,22 @@ export function Footer() {
   const cols = [
     {
       heading: "Product",
-      links: ["Features", "Templates", "Pricing", "Changelog"],
+      links: [
+        { label: "Features", href: "#features" },
+        { label: "How it works", href: "#how-it-works" },
+        { label: "Pricing", href: "/#pricing" },
+        { label: "Templates", href: "/templates" },
+        { label: "Workspace", href: "/workspace" },
+      ],
     },
-    { heading: "Company", links: ["About", "Blog", "Careers", "Contact"] },
+    // {
+    //   heading: "Account",
+    //   links: [
+    //     { label: "Sign in", href: "/auth" },
+    //     { label: "Sign up free", href: "/auth" },
+    //     { label: "Upgrade", href: "/pricing" },
+    //   ],
+    // },
   ];
   return (
     <footer
@@ -1500,9 +1462,9 @@ export function Footer() {
                   style={{ display: "flex", flexDirection: "column", gap: 16 }}
                 >
                   {col.links.map((link) => (
-                    <a
-                      key={link}
-                      href="#"
+                    <Link
+                      key={link.label}
+                      href={link.href}
                       style={{
                         fontSize: 15,
                         color: "#a1a1aa",
@@ -1516,8 +1478,8 @@ export function Footer() {
                         (e.currentTarget.style.color = "#a1a1aa")
                       }
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -1560,8 +1522,8 @@ export function Footer() {
               © 2026 PromptOps. All rights reserved.
             </span>
             <div style={{ display: "flex", gap: 20 }}>
-              <a
-                href="#"
+              <Link
+                href="/privacy"
                 style={{
                   fontSize: 14,
                   color: "#71717a",
@@ -1572,9 +1534,9 @@ export function Footer() {
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#71717a")}
               >
                 Privacy Policy
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href="/terms"
                 style={{
                   fontSize: 14,
                   color: "#71717a",
@@ -1585,7 +1547,7 @@ export function Footer() {
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#71717a")}
               >
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>

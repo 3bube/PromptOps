@@ -193,3 +193,12 @@ export const EXAMPLE_PROMPTS = [
     category: "marketing",
   },
 ];
+
+export const COLORS = [
+  "#7c5cfc",
+  "#22d4c8",
+  "#f59e0b",
+  "#10b981",
+  "#ef4444",
+  "#3b82f6",
+];

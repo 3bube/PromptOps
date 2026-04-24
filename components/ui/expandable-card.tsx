@@ -21,7 +21,7 @@ import {
   type Transition,
 } from "motion/react";
 
-import { useClickOutside } from "@/hooks/useClickOutside";
+import { useClickOutside } from "@/contexts/hooks/useClickOutside";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

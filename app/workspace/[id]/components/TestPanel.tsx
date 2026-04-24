@@ -14,6 +14,7 @@ import {
   Braces,
 } from "lucide-react";
 import type { Block, Variable } from "../types";
+import posthog from "posthog-js";
 
 type RunState = "idle" | "running" | "done" | "error";
 
@@ -89,8 +90,16 @@ export function TestPanel({
         setOutput(fullText);
       }
 
-      setTokenCount(Math.ceil(fullText.length / 4));
+      const finalTokenCount = Math.ceil(fullText.length / 4);
+      setTokenCount(finalTokenCount);
       setRunState("done");
+      posthog.capture("prompt_test_run", {
+        block_count: blocks.length,
+        variable_count: variables.length,
+        has_user_message: !!userMessage.trim(),
+        prompt_score: Math.min(100, score),
+        estimated_tokens: finalTokenCount,
+      });
     } catch (err) {
       setOutput(err instanceof Error ? err.message : "Something went wrong.");
       setRunState("error");

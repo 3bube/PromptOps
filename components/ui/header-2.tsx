@@ -60,7 +60,9 @@ export function Header() {
           },
         )}
       >
-        <WordmarkIcon className="h-4" />
+        <Link href="/#hero">
+          <WordmarkIcon className="h-4" />
+        </Link>
         <div className="hidden items-center gap-2 md:flex">
           {links.map((link, i) => (
             <Link
@@ -84,15 +86,16 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <Link
+          {/* <Link
             href="/auth"
             className={buttonVariants({
               variant: "outline",
-              className: "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100",
+              className:
+                "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100",
             })}
           >
             Sign In
-          </Link>
+          </Link> */}
           <Link
             href="/auth"
             className={buttonVariants({
@@ -159,7 +162,8 @@ export function Header() {
               onClick={() => setOpen(false)}
               className={buttonVariants({
                 variant: "outline",
-                className: "w-full border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100",
+                className:
+                  "w-full border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100",
               })}
             >
               Sign In
@@ -186,7 +190,7 @@ export const WordmarkIcon = ({
 }: React.ComponentProps<"div">) => (
   <div
     className={cn(
-      "font-bold text-xl tracking-tight flex items-center",
+      "font-bold text-xl tracking-tight flex items-center pointer-events-none select-none",
       className,
     )}
     {...props}

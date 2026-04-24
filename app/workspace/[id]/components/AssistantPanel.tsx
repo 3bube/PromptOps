@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Sparkles, ArrowUp, Loader2, X } from "lucide-react";
 import type { Block, ChatMessage } from "../types";
 import Image from "next/image";
-import { supabase } from "@/integrations/supabase/client";
+import { useMessages, useAddMessage } from "@/hooks/data/prompts.hooks";
+import posthog from "posthog-js";
 import {
   Conversation,
   ConversationContent,
@@ -94,20 +95,16 @@ export function AssistantPanel({
   const mirrorRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Load messages on mount and whenever a version is restored (messageReloadKey increments)
+  // Load messages from query hook
+  const { data: loadedMessages } = useMessages(promptId);
+  const addMessageMutation = useAddMessage(promptId);
+
+  // Update local messages when loaded data changes
   useEffect(() => {
-    async function loadMessages() {
-      setMessages([]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase as any)
-        .from("prompt_messages")
-        .select("role, content")
-        .eq("prompt_id", promptId)
-        .order("created_at", { ascending: true });
-      if (data?.length) setMessages(data as ChatMessage[]);
+    if (loadedMessages) {
+      setMessages(loadedMessages as ChatMessage[]);
     }
-    loadMessages();
-  }, [promptId, messageReloadKey]);
+  }, [loadedMessages, messageReloadKey]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,18 +154,13 @@ export function AssistantPanel({
   // Fire-and-forget helper — doesn't block the UI
   const persistMessage = useCallback(
     async (role: "user" | "assistant", content: string) => {
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData.user?.id;
-      if (!userId) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from("prompt_messages").insert({
-        prompt_id: promptId,
-        user_id: userId,
-        role,
-        content,
-      });
+      try {
+        await addMessageMutation.mutateAsync({ role, content });
+      } catch (err) {
+        console.error("Failed to persist message:", err);
+      }
     },
-    [promptId],
+    [addMessageMutation],
   );
 
   const send = async () => {
@@ -176,6 +168,11 @@ export function AssistantPanel({
     if (!trimmed || loading) return;
 
     const taggedBlocks = extractMentions(trimmed, blocks);
+    posthog.capture("assistant_message_sent", {
+      prompt_id: promptId,
+      message_length: trimmed.length,
+      tagged_block_count: taggedBlocks.length,
+    });
 
     const userMsg: ChatMessage = { role: "user", content: trimmed };
     const newMessages = [...messages, userMsg];

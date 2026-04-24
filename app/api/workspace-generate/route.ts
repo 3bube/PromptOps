@@ -1,10 +1,18 @@
 import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import { PLAN_LIMITS } from "@/constants/index";
 
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-nano";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const openai = OPENAI_API_KEY ? createOpenAI({ apiKey: OPENAI_API_KEY }) : null;
+
+const serverSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false, autoRefreshToken: false } },
+);
 
 const SYSTEM_PROMPT = `You are a prompt architect. Given a description of what the user wants to build, generate 3–6 structured prompt blocks that together form a complete, production-ready system prompt.
 
@@ -29,12 +37,46 @@ Rules:
 export async function POST(request: NextRequest) {
   try {
     if (!OPENAI_API_KEY || !openai) {
-      return Response.json({ error: "API key not configured" }, { status: 500 });
+      return Response.json(
+        { error: "API key not configured" },
+        { status: 500 },
+      );
     }
 
-    const { description } = await request.json();
+    const { description, userId } = await request.json();
     if (!description?.trim()) {
       return Response.json({ error: "Missing description" }, { status: 400 });
+    }
+
+    // Quota enforcement
+    if (userId) {
+      const { data: userRecord } = await serverSupabase
+        .from("users")
+        .select("plan")
+        .eq("id", userId)
+        .single();
+
+      const plan = (userRecord?.plan ?? "free") as string;
+      const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
+
+      if (limit !== Infinity) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count } = await serverSupabase
+          .from("prompts")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("created_at", startOfMonth.toISOString());
+
+        if ((count ?? 0) >= limit) {
+          return Response.json(
+            { error: "limit_exceeded", plan, limit },
+            { status: 429 },
+          );
+        }
+      }
     }
 
     const result = streamText({
@@ -42,6 +84,24 @@ export async function POST(request: NextRequest) {
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: description.trim() }],
       temperature: 0.7,
+      onFinish: async ({ usage }) => {
+        if (userId) {
+          const inputTokens = usage?.inputTokens ?? 0;
+          const outputTokens = usage?.outputTokens ?? 0;
+          const INPUT_COST = 0.0000001;
+          const OUTPUT_COST = 0.0000004;
+          await serverSupabase.from("prompts").insert({
+            user_id: userId,
+            category: "general",
+            prompt_template: "workspace",
+            user_input: { input: description.trim() },
+            generated_prompt: "",
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            total_cost: inputTokens * INPUT_COST + outputTokens * OUTPUT_COST,
+          });
+        }
+      },
     });
 
     return result.toTextStreamResponse();

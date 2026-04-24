@@ -1,19 +1,4 @@
-export interface Block {
-  id: string;
-  title: string;
-  color: string;
-  content: string;
-}
-
-export interface Variable {
-  name: string;
-  value: string;
-}
-
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
+export type { Block, Variable, ChatMessage } from "@/types";
 
 export const BLOCK_COLORS = [
   "#7c5cfc",

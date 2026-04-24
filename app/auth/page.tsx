@@ -7,6 +7,7 @@ import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { WordmarkIcon } from "@/components/ui/header-2";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import posthog from "posthog-js";
 
 function AuthPageInner() {
   const { user } = useAuth();
@@ -35,6 +36,7 @@ function AuthPageInner() {
     localStorage.setItem("lastAuthProvider", provider);
     setLoading(provider);
     setError(null);
+    posthog.capture("sign_in_clicked", { provider });
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },

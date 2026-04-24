@@ -3,13 +3,21 @@
 import { useState, useRef, useCallback } from "react";
 import type { Block } from "../types";
 import { BLOCK_COLORS } from "../types";
+import posthog from "posthog-js";
 
 interface UseGenerateBlocksOptions {
+  userId?: string;
   onBlocksUpdate: (blocks: Block[]) => void;
-  onComplete: () => void;
+  onComplete: (blocks: Block[]) => void;
+  onLimitExceeded?: (plan: string, limit: number) => void;
 }
 
-export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlocksOptions) {
+export function useGenerateBlocks({
+  userId,
+  onBlocksUpdate,
+  onComplete,
+  onLimitExceeded,
+}: UseGenerateBlocksOptions) {
   const [isGenerating, setIsGenerating] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -20,6 +28,9 @@ export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlo
       const controller = new AbortController();
       abortRef.current = controller;
       setIsGenerating(true);
+      posthog.capture("prompt_generation_started", {
+        description_length: description.trim().length,
+      });
 
       // Mutable working state — we mutate these in the loop and snapshot to React state
       const blocks: Block[] = [];
@@ -35,9 +46,15 @@ export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlo
         const res = await fetch("/api/workspace-generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description }),
+          body: JSON.stringify({ description, userId }),
           signal: controller.signal,
         });
+
+        if (res.status === 429) {
+          const data = await res.json().catch(() => ({}));
+          onLimitExceeded?.(data.plan ?? "free", data.limit ?? 5);
+          return;
+        }
 
         if (!res.ok || !res.body) throw new Error("Request failed");
 
@@ -51,7 +68,6 @@ export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlo
           buffer += decoder.decode(value, { stream: true });
 
           // Drain all complete markers from the buffer
-          // eslint-disable-next-line no-constant-condition
           while (true) {
             const markerStart = buffer.indexOf(MARKER);
 
@@ -96,13 +112,20 @@ export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlo
               if (maybeColor.startsWith("#")) color = maybeColor;
             }
 
-            currentBlock = { id: crypto.randomUUID(), title, color, content: "" };
+            currentBlock = {
+              id: crypto.randomUUID(),
+              title,
+              color,
+              content: "",
+            };
             blocks.push(currentBlock);
             pushUpdate();
 
             // Advance buffer past the header, skip leading newline
             const afterHeader = buffer.slice(headerEnd + 1);
-            buffer = afterHeader.startsWith("\n") ? afterHeader.slice(1) : afterHeader;
+            buffer = afterHeader.startsWith("\n")
+              ? afterHeader.slice(1)
+              : afterHeader;
           }
         }
 
@@ -112,7 +135,10 @@ export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlo
           pushUpdate();
         }
 
-        onComplete();
+        posthog.capture("prompt_generation_completed", {
+          block_count: blocks.length,
+        });
+        onComplete([...blocks]);
       } catch (err: unknown) {
         if (!(err instanceof Error && err.name === "AbortError")) {
           console.error("Generation error:", err);
@@ -123,7 +149,7 @@ export function useGenerateBlocks({ onBlocksUpdate, onComplete }: UseGenerateBlo
         setIsGenerating(false);
       }
     },
-    [onBlocksUpdate, onComplete]
+    [userId, onBlocksUpdate, onComplete, onLimitExceeded],
   );
 
   const stop = useCallback(() => {

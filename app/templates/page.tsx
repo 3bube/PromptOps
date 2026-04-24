@@ -219,7 +219,7 @@ const Templates = () => {
           paddingBottom: "80px",
         }}
       >
-        <Header />
+        {/* <Header /> */}
 
         <main className="mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-12 max-w-300">
           {/* Header */}

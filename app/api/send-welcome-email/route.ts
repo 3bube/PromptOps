@@ -11,15 +11,12 @@ export async function POST(request: Request) {
 
     // Validate input (email required)
     if (!email || typeof email !== "string") {
-      return Response.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+      return Response.json({ error: "Email is required" }, { status: 400 });
     }
 
     // Render email template to HTML
     const html = await render(
-      PromptOpsWelcome({ fullName: fullName || "there" })
+      PromptOpsWelcome({ fullName: fullName || "there" }),
     );
 
     // Send via Resend
@@ -28,21 +25,19 @@ export async function POST(request: Request) {
       to: email,
       subject: "Welcome to PromptOps — Start Building Better Prompts",
       html: html,
+      scheduledAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // Schedule 10 mins in future to ensure user record is fully created
     });
 
     // Return success
     return Response.json(
       { success: true, messageId: data.data?.id },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     // Log error but don't expose details to client
     console.error("Welcome email error:", error);
 
     // Return generic error (don't block signup)
-    return Response.json(
-      { error: "Failed to send email" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to send email" }, { status: 500 });
   }
 }
