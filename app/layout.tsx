@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { Analytics } from "@vercel/analytics/next";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import Providers from "@/components/Providers";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const biennale = localFont({
+  src: "../public/fonts/Biennale.woff2",
+  variable: "--font-sans",
+});
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,9 +53,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: APP_URL,
     siteName: "PromptOps",
-    title: "PromptOps — AI Prompt Generator for Any Task",
+    title: "Free AI Prompt Generator for ChatGPT, Claude & Gemini | PromptOps",
     description:
-      "Turn rough ideas into expert-quality AI prompts for coding, writing, marketing, and more. Free to start.",
+      "Turn lazy prompts into expert prompts with the best free AI prompt generator. Get consistent, high-quality prompts for ChatGPT, Claude, and Midjourney.",
     images: [
       {
         url: "/og.png",
@@ -97,20 +103,12 @@ export default function RootLayout({
         "antialiased",
         geistSans.variable,
         geistMono.variable,
+        biennale.variable,
         "font-sans",
-        inter.variable,
       )}
     >
       <body className="min-h-full flex flex-col">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>{children}</AuthProvider>
-          <Analytics />
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

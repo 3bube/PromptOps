@@ -1,5 +1,6 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { createClient } from "@supabase/supabase-js";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const serverSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,6 +32,13 @@ export const POST = Webhooks({
   onSubscriptionActive: async ({ data }) => {
     const plan = PRODUCT_PLAN_MAP[data.productId] ?? "free";
     await setPlan(data.customer.email, plan, data.customerId);
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: data.customer.email,
+      event: "subscription_activated",
+      properties: { plan, product_id: data.productId, customer_id: data.customerId },
+    });
+    await posthog.shutdown();
   },
   onSubscriptionUpdated: async ({ data }) => {
     const plan = PRODUCT_PLAN_MAP[data.productId] ?? "free";
@@ -38,8 +46,22 @@ export const POST = Webhooks({
   },
   onSubscriptionCanceled: async ({ data }) => {
     await setPlan(data.customer.email, "free");
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: data.customer.email,
+      event: "subscription_canceled",
+      properties: { reason: "canceled", customer_id: data.customerId },
+    });
+    await posthog.shutdown();
   },
   onSubscriptionRevoked: async ({ data }) => {
     await setPlan(data.customer.email, "free");
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: data.customer.email,
+      event: "subscription_canceled",
+      properties: { reason: "revoked", customer_id: data.customerId },
+    });
+    await posthog.shutdown();
   },
 });

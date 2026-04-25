@@ -57,7 +57,7 @@ const OutputSection = ({
               Upgrade to Pro for 500/month or Unlimited for no cap.
             </p>
           </div>
-          <Button asChild variant="hero" size="lg">
+          <Button asChild variant="default" size="lg">
             <a href={upgradeUrl}>See plans</a>
           </Button>
         </div>

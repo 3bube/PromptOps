@@ -1,19 +1,40 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(request: NextRequest) {
-  const proto = request.headers.get("x-forwarded-proto");
+const ALLOWED_WHEN_AUTHED = ["/workspace", "/templates"];
+const ALWAYS_PUBLIC = ["/auth", "/api", "/_next", "/favicon", "/robots", "/sitemap"];
 
-  if (proto === "http") {
-    const host = request.headers.get("host");
-    return NextResponse.redirect(`https://${host}${request.nextUrl.pathname}${request.nextUrl.search}`, {
-      status: 301,
-    });
+function isAuthed(req: NextRequest): boolean {
+  return req.cookies.get("promptops-auth")?.value === "1";
+}
+
+function startsWithAny(pathname: string, prefixes: string[]): boolean {
+  return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
+export function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const authed = isAuthed(req);
+
+  // Never intercept static assets, API routes, or auth flow
+  if (startsWithAny(pathname, ALWAYS_PUBLIC)) {
+    return NextResponse.next();
+  }
+
+  if (authed) {
+    // Authenticated users can only be in /workspace or /templates
+    if (!startsWithAny(pathname, ALLOWED_WHEN_AUTHED)) {
+      return NextResponse.redirect(new URL("/workspace", req.url));
+    }
+  } else {
+    // Unauthenticated users cannot access /workspace or /templates
+    if (startsWithAny(pathname, ALLOWED_WHEN_AUTHED)) {
+      return NextResponse.redirect(new URL("/auth", req.url));
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/data|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|.*\\..*).*)"],
 };

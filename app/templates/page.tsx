@@ -27,7 +27,8 @@ import {
   ExpandableCardExpandContainer,
 } from "@/components/ui/expandable-card";
 import { Input } from "@/components/ui/input";
-import Navbar from "@/components/Navbar";
+import { Header } from "@/components/ui/header-2";
+import { Footer } from "@/components/v2/sections";
 
 interface Template {
   id: string;
@@ -195,161 +196,177 @@ const Templates = () => {
   };
 
   const handleUse = (template: Template) => {
-    router.push(
-      `/?prompt=${encodeURIComponent(template.prompt)}&category=${template.category}#prompt-card`,
-    );
+    router.push(`/workspace?prompt=${encodeURIComponent(template.prompt)}`);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div
+      style={{
+        background: "#141516",
+        color: "#09090b",
+        minHeight: "100vh",
+        fontFamily: '"Biennale", sans-serif',
+      }}
+    >
+      <div
+        style={{
+          background: "#fafafa",
+          borderBottomLeftRadius: 80,
+          borderBottomRightRadius: 80,
+          position: "relative",
+          zIndex: 10,
+          boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+          paddingBottom: "80px",
+        }}
+      >
+        {/* <Header /> */}
 
-      <main className="mx-auto px-4 sm:px-6 pt-20 pb-24">
-        {/* Header */}
-        <div className="mb-10">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-6 -ml-2"
-            onClick={() => router.push("/")}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
+        <main className="mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-12 max-w-300">
+          {/* Header */}
+          <div className="mb-12 flex flex-col items-center text-center">
+            <button
+              onClick={() => router.push("/")}
+              className="group flex items-center gap-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 mb-8"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              Back to home
+            </button>
 
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-3">
-            Prompt Templates
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            Browse pre-built prompt templates to jumpstart your work. Click
-            "Use" to load one directly into the generator.
-          </p>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div className="relative flex-1 max-w-md input-glow rounded-xl transition-shadow duration-300">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search templates…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-11 pl-11 rounded-xl border-border/60 bg-surface-sunken placeholder:text-text-tertiary focus-visible:ring-primary/20"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeCategory === cat.value
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((template) => (
-            <ExpandableCard key={template.id}>
-              <ExpandableCardBody className="card-elevated rounded-2xl p-6 gap-4 group hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <template.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground leading-tight mb-1">
-                      {template.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {template.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-surface-sunken rounded-xl p-3 text-xs text-muted-foreground leading-relaxed line-clamp-3 font-mono">
-                  {template.prompt}
-                </div>
-
-                <div className="flex items-center gap-2 mt-auto pt-1">
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-secondary text-secondary-foreground capitalize">
-                    {template.category}
-                  </span>
-                  <div className="ml-auto flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-3 rounded-lg"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopy(template);
-                      }}
-                    >
-                      {copiedId === template.id ? (
-                        <Check className="w-3.5 h-3.5 text-primary" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-8 px-4 rounded-lg"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUse(template);
-                      }}
-                    >
-                      Use
-                    </Button>
-                  </div>
-                </div>
-              </ExpandableCardBody>
-
-              <ExpandableCardExpandContainer>
-                <ExpandableCardContent>
-                  <div className="flex items-center justify-between mb-3 pr-8">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Prompt
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="rounded-lg"
-                      onClick={() => handleCopy(template)}
-                    >
-                      {copiedId === template.id ? (
-                        <Check className="w-3.5 h-3.5 text-primary" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                  </div>
-                  <div className="bg-surface-sunken rounded-xl p-4">
-                    <p className="font-mono text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {template.prompt}
-                    </p>
-                  </div>
-                </ExpandableCardContent>
-              </ExpandableCardExpandContainer>
-            </ExpandableCard>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">
-              No templates found. Try a different search or category.
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#09090b] mb-4">
+              Expert Prompt Templates
+            </h1>
+            <p className="text-lg text-zinc-500 max-w-2xl mx-auto">
+              Browse pre-built prompt frameworks to jumpstart your work. Click
+              "Use" to load one directly into the generator.
             </p>
           </div>
-        )}
-      </main>
+
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-4 mb-10 items-center justify-between">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <Input
+                placeholder="Search templates…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-12 pl-11 rounded-2xl border-zinc-200 bg-white placeholder:text-zinc-400 focus-visible:ring-teal-500/20 text-base"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 justify-center">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setActiveCategory(cat.value)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeCategory === cat.value
+                      ? "bg-zinc-900 text-white shadow-md scale-105"
+                      : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((template) => (
+              <ExpandableCard key={template.id}>
+                <ExpandableCardBody className="relative group p-6 rounded-3xl bg-white border border-zinc-200 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:border-teal-500/30 gap-4 hover:-translate-y-1 cursor-pointer flex flex-col h-full">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100 group-hover:scale-110 transition-transform duration-300">
+                      <template.icon className="w-6 h-6 text-teal-600" />
+                    </div>
+                    <div className="min-w-0 pt-1">
+                      <h3 className="font-bold text-zinc-900 leading-tight mb-1.5">
+                        {template.title}
+                      </h3>
+                      <p className="text-sm text-zinc-500 leading-relaxed">
+                        {template.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 bg-[#fafafa] rounded-2xl p-4 text-[13px] text-zinc-600 leading-relaxed line-clamp-3 font-mono border border-zinc-100">
+                    {template.prompt}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-auto pt-4">
+                    <span className="text-[11px] font-bold tracking-wider px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-600 uppercase">
+                      {template.category}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 px-3 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopy(template);
+                        }}
+                      >
+                        {copiedId === template.id ? (
+                          <Check className="w-4 h-4 text-teal-600" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-zinc-500" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-9 px-4 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUse(template);
+                        }}
+                      >
+                        Use
+                      </Button>
+                    </div>
+                  </div>
+                </ExpandableCardBody>
+
+                <ExpandableCardExpandContainer className="bg-transparent">
+                  <ExpandableCardContent className="bg-white rounded-3xl border border-zinc-200 shadow-2xl p-6">
+                    <div className="flex items-center justify-between mb-4 pr-8">
+                      <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Full Prompt
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-xl border border-zinc-200 hover:bg-zinc-50"
+                        onClick={() => handleCopy(template)}
+                      >
+                        {copiedId === template.id ? (
+                          <Check className="w-4 h-4 text-teal-600" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-zinc-600" />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="bg-[#fafafa] rounded-2xl p-6 border border-zinc-100">
+                      <p className="font-mono text-[14px] text-zinc-700 leading-loose whitespace-pre-wrap">
+                        {template.prompt}
+                      </p>
+                    </div>
+                  </ExpandableCardContent>
+                </ExpandableCardExpandContainer>
+              </ExpandableCard>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="text-center py-24">
+              <p className="text-lg text-zinc-500">
+                No templates found. Try a different search or category.
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
+      <Footer />
     </div>
   );
 };

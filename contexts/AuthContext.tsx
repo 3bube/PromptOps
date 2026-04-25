@@ -31,16 +31,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const syncCookie = (session: Session | null) => {
+      if (session) {
+        document.cookie = "promptops-auth=1; path=/; SameSite=Lax; max-age=604800";
+      } else {
+        document.cookie = "promptops-auth=; path=/; SameSite=Lax; max-age=0";
+      }
+    };
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+      syncCookie(session);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
+      syncCookie(session);
     });
 
     return () => subscription.unsubscribe();
