@@ -342,7 +342,7 @@ export function AssistantPanel({
   const taggedInInput = extractMentions(input, blocks);
 
   return (
-    <div className="w-87.5 border-r border-[#e4e4e7] bg-[#fafafa] flex-col shrink-0 hidden lg:flex h-full min-h-0">
+    <div className="w-87.5 border-r border-[#e4e4e7] bg-[#fafafa] flex-col shrink-0 hidden lg:flex h-full min-h-0" data-nextstep="assistant-panel">
       {/* Header */}
       <div className="p-4 border-b border-[#e4e4e7] flex items-center gap-2">
         <span className="text-sm font-semibold">Prompt Assistant</span>

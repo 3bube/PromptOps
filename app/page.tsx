@@ -11,7 +11,6 @@ import {
   FAQ,
   CTABanner,
   Footer,
-  TweaksPanel,
 } from "@/components/v2/sections";
 import { HowItWorks } from "@/components/ui/how-it-works";
 import { Features } from "@/components/blocks/features-8";

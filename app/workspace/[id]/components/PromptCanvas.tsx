@@ -111,7 +111,7 @@ export function PromptCanvas({
         </div>
 
         {/* Variables */}
-        <div className="mb-8 p-5 bg-[#ffffff] border border-[#e4e4e7] rounded-xl">
+        <div className="mb-8 p-5 bg-[#ffffff] border border-[#e4e4e7] rounded-xl" data-nextstep="variables-section">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Braces size={15} className="text-[#22d4c8]" />
@@ -234,6 +234,7 @@ export function PromptCanvas({
             <button
               onClick={onBlockAdd}
               className="w-full mt-4 py-3 border border-dashed border-[#d4d4d8] rounded-xl text-sm text-[#a1a1aa] hover:text-[#71717a] hover:border-[#a1a1aa] transition-colors flex items-center justify-center gap-2 bg-[#fafafa] hover:bg-[#f4f4f5]"
+              data-nextstep="add-block-btn"
             >
               <Plus size={16} /> Add Block
             </button>

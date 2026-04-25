@@ -1,12 +1,12 @@
 import WorkspaceClient from "./components/WorkspaceClient";
 
 export interface WorkspacePageProps {
-  searchParams: {
+  searchParams: Promise<{
     prompt?: string;
-  };
+  }>;
 }
 
 export default async function Page({ searchParams }: WorkspacePageProps) {
-  const initDescription = searchParams.prompt ?? "";
-  return <WorkspaceClient initDescription={initDescription} />;
+  const { prompt } = await searchParams;
+  return <WorkspaceClient initDescription={prompt ?? ""} />;
 }

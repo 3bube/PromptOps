@@ -6,7 +6,8 @@ import { WordmarkIcon } from "@/components/ui/header-2";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import posthog from "posthog-js";
+import { handleUpgrade } from "@/lib/utils";
+import { PRICING_PLANS } from "@/constants";
 
 const S = {
   bg: "#fafafa",
@@ -866,71 +867,7 @@ export function SocialProof({ accentColor }: any) {
 export function Pricing({ accentColor }: any) {
   const accent = accentColor || S.accent;
   const { user } = useAuth();
-  const PRO_PRODUCT_ID = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID;
-  const UNLIMITED_PRODUCT_ID =
-    process.env.NEXT_PUBLIC_POLAR_UNLIMITED_PRODUCT_ID;
 
-  const handleUpgrade = (
-    productId: string | null | undefined,
-    tierName?: string,
-  ) => {
-    if (!productId) return;
-    posthog.capture("upgrade_clicked", {
-      tier: tierName,
-      product_id: productId,
-      logged_in: !!user,
-    });
-    if (!user) {
-      window.location.href = "/auth?next=/pricing";
-      return;
-    }
-    const email = `&customerEmail=${encodeURIComponent(user.email!)}`;
-    window.location.href = `/api/polar/checkout?products=${productId}${email}`;
-  };
-
-  const plans = [
-    {
-      name: "Free",
-      price: 0,
-      period: "forever",
-      desc: "Get started with prompt generation.",
-      limit: "5 generations / month",
-      features: ["All 6 categories", "Streaming output", "Prompt history"],
-      cta: "Current plan",
-      popular: false,
-      productId: null,
-    },
-    {
-      name: "Pro",
-      price: 9,
-      period: "/month",
-      desc: "For creators who generate prompts daily.",
-      limit: "500 generations / month",
-      features: [
-        "Everything in Free",
-        "500 generations per month",
-        "Priority generation",
-      ],
-      cta: "Upgrade to Pro",
-      popular: true,
-      productId: PRO_PRODUCT_ID,
-    },
-    {
-      name: "Unlimited",
-      price: 19,
-      period: "/month",
-      desc: "No limits, no thinking about it.",
-      limit: "Unlimited generations",
-      features: [
-        "Everything in Pro",
-        "Unlimited generations",
-        "Early access to new features",
-      ],
-      cta: "Upgrade to Unlimited",
-      popular: false,
-      productId: UNLIMITED_PRODUCT_ID,
-    },
-  ];
   return (
     <section
       id="pricing"
@@ -951,7 +888,7 @@ export function Pricing({ accentColor }: any) {
             alignItems: "stretch",
           }}
         >
-          {plans.map((plan) => (
+          {PRICING_PLANS.map((plan) => (
             <div
               key={plan.name}
               style={{
@@ -1096,7 +1033,7 @@ export function Pricing({ accentColor }: any) {
               </div>
               <button
                 disabled={!plan.productId}
-                onClick={() => handleUpgrade(plan.productId, plan.name)}
+                onClick={() => handleUpgrade(plan.productId, user, plan.name)}
                 style={{
                   background: plan.popular ? accent : "transparent",
                   color: plan.popular ? "#fff" : S.text,

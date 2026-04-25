@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { WorkspaceSidebar } from "./components/WorkspaceSidebar";
 import { WorkspaceTopbar } from "./components/WorkspaceTopbar";
 import { AssistantPanel } from "./components/AssistantPanel";
@@ -10,9 +10,12 @@ import { TestPanel } from "./components/TestPanel";
 import { useWorkspaceData } from "./hooks/useWorkspaceData";
 import { useGenerateBlocks } from "./hooks/useGenerateBlocks";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuota } from "@/hooks/data/useQuota";
+import { useQuota } from "@/hooks/data/prompts.hooks";
 import type { Block } from "./types";
 import posthog from "posthog-js";
+import { PRICING_PLANS } from "@/constants";
+import { handleUpgrade } from "@/lib/utils";
+import UpgradeModal from "./components/UpgradeModal";
 
 function Workspace({
   id,
@@ -21,13 +24,16 @@ function Workspace({
   id: string;
   initDescription: string | null;
 }) {
-  const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("editor");
   const [messageReloadKey, setMessageReloadKey] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [exceededLimit, setExceededLimit] = useState<{ plan: string; limit: number } | null>(null);
+  const [exceededLimit, setExceededLimit] = useState<{
+    plan: string;
+    limit: number;
+  } | null>(null);
   const autoV1Created = useRef(false);
+  const autoGenerationStarted = useRef(false);
 
   const { plan, limit, used, refetch: refetchQuota } = useQuota(user?.id);
 
@@ -61,7 +67,9 @@ function Workspace({
     (sourceBlocks: Block[]) => {
       const seen = new Set<string>();
       for (const block of sourceBlocks) {
-        for (const [, name] of block.content.matchAll(/\{\{([a-zA-Z0-9_]+)\}\}/g)) {
+        for (const [, name] of block.content.matchAll(
+          /\{\{([a-zA-Z0-9_]+)\}\}/g,
+        )) {
           if (!seen.has(name)) {
             seen.add(name);
             addVariable(name);
@@ -92,10 +100,13 @@ function Workspace({
     [setBlocks, extractAndAddVariables],
   );
 
-  const handleLimitExceeded = useCallback((exceededPlan: string, exceededPlanLimit: number) => {
-    setExceededLimit({ plan: exceededPlan, limit: exceededPlanLimit });
-    setShowUpgradeModal(true);
-  }, []);
+  const handleLimitExceeded = useCallback(
+    (exceededPlan: string, exceededPlanLimit: number) => {
+      setExceededLimit({ plan: exceededPlan, limit: exceededPlanLimit });
+      setShowUpgradeModal(true);
+    },
+    [],
+  );
 
   const {
     start: startGeneration,
@@ -124,7 +135,14 @@ function Workspace({
 
   // Auto-start generation when workspace loads empty with an init description
   useEffect(() => {
-    if (!loading && !error && blocks.length === 0 && initDescription) {
+    if (
+      !loading &&
+      !error &&
+      blocks.length === 0 &&
+      initDescription &&
+      !autoGenerationStarted.current
+    ) {
+      autoGenerationStarted.current = true;
       startGeneration(initDescription);
     }
     // Only run once when data finishes loading
@@ -133,7 +151,11 @@ function Workspace({
 
   const handleExport = useCallback(() => {
     if (!meta) return;
-    posthog.capture("prompt_exported", { prompt_id: id, block_count: blocks.length, variable_count: variables.length });
+    posthog.capture("prompt_exported", {
+      prompt_id: id,
+      block_count: blocks.length,
+      variable_count: variables.length,
+    });
     const lines: string[] = [`# Prompt: ${meta.name}\n`];
     if (variables.length) {
       lines.push(`## Variables\n`);
@@ -241,49 +263,12 @@ function Workspace({
 
       {/* Upgrade modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e4e4e7] p-8 max-w-sm w-full mx-4 flex flex-col gap-5">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-[#7c5cfc]/10 flex items-center justify-center mb-4">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" fill="#7c5cfc" fillOpacity="0.8"/>
-                </svg>
-              </div>
-              <h2 className="text-base font-semibold text-[#09090b]">
-                You've used all {exceededLimit?.limit} generations this month
-              </h2>
-              <p className="text-sm text-[#71717a] mt-2 leading-relaxed">
-                Upgrade to Pro for 500 generations/month, or go Unlimited for no limits — ever.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between text-xs text-[#71717a] bg-[#fafafa] border border-[#e4e4e7] rounded-lg px-3 py-2">
-                <span>Pro</span>
-                <span className="font-semibold text-[#09090b]">$9 / month · 500 generations</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-[#71717a] bg-[#fafafa] border border-[#e4e4e7] rounded-lg px-3 py-2">
-                <span>Unlimited</span>
-                <span className="font-semibold text-[#09090b]">$19 / month · No limits</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => router.push("/pricing")}
-                className="flex-1 px-4 py-2.5 bg-[#7c5cfc] hover:bg-[#6a4fe4] text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Upgrade now
-              </button>
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="px-4 py-2.5 bg-[#f4f4f5] hover:bg-[#e4e4e7] text-[#71717a] rounded-lg text-sm font-medium transition-colors"
-              >
-                Later
-              </button>
-            </div>
-          </div>
-        </div>
+        <UpgradeModal
+          exceededLimit={exceededLimit}
+          user={user}
+          handleUpgrade={handleUpgrade}
+          setShowUpgradeModal={setShowUpgradeModal}
+        />
       )}
     </div>
   );

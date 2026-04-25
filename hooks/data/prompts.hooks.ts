@@ -76,7 +76,9 @@ export function useAddVariable(promptId: string) {
       return await service.addVariable(promptId, name);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.workspaceVariables(promptId) });
+      queryClient.invalidateQueries({
+        queryKey: qk.workspaceVariables(promptId),
+      });
     },
   });
 }
@@ -88,7 +90,9 @@ export function useDeleteVariable(promptId: string) {
       return await service.deleteVariable(promptId, name);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.workspaceVariables(promptId) });
+      queryClient.invalidateQueries({
+        queryKey: qk.workspaceVariables(promptId),
+      });
     },
   });
 }
@@ -101,10 +105,17 @@ export function useSaveVersion(promptId: string) {
       variables: any[];
       label?: string;
     }) => {
-      return await service.saveVersion(promptId, params.blocks, params.variables, params.label);
+      return await service.saveVersion(
+        promptId,
+        params.blocks,
+        params.variables,
+        params.label,
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.workspaceVersions(promptId) });
+      queryClient.invalidateQueries({
+        queryKey: qk.workspaceVersions(promptId),
+      });
     },
   });
 }
@@ -124,7 +135,11 @@ export function useRestoreVersion(promptId: string) {
 export function usePersistBlocks(promptId: string) {
   return useMutation({
     mutationFn: async (params: { blocks: any[]; variables: any[] }) => {
-      return await service.persistBlocks(promptId, params.blocks, params.variables);
+      return await service.persistBlocks(
+        promptId,
+        params.blocks,
+        params.variables,
+      );
     },
   });
 }
@@ -142,11 +157,32 @@ export function useMessages(promptId: string) {
 export function useAddMessage(promptId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { role: "user" | "assistant"; content: string }) => {
+    mutationFn: async (params: {
+      role: "user" | "assistant";
+      content: string;
+    }) => {
       return await service.addMessage(promptId, params.role, params.content);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.messages(promptId) });
     },
   });
+}
+
+export function useQuota(userId: string | undefined) {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["quota", userId],
+    queryFn: () => service.fetchQuota(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+  });
+
+  return {
+    plan: data?.plan ?? "free",
+    limit: data?.limit ?? null,
+    used: data?.used ?? 0,
+    remaining: data?.remaining ?? null,
+    loading: isLoading,
+    refetch,
+  };
 }

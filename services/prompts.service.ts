@@ -6,6 +6,7 @@ import type {
   ChatMessage,
   PromptMeta,
   VersionEntry,
+  QuotaData,
 } from "@/types";
 import { COLORS } from "@/constants";
 
@@ -381,5 +382,11 @@ export class PromptsService {
     });
 
     if (error) throw error;
+  }
+
+  async fetchQuota(userId: string): Promise<QuotaData> {
+    const res = await fetch(`/api/usage?userId=${userId}`);
+    if (!res.ok) throw new Error("Failed to fetch quota");
+    return res.json();
   }
 }

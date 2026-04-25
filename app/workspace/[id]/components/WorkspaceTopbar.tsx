@@ -1,7 +1,8 @@
 "use client";
 
-import { Download, Play } from "lucide-react";
+import { Download, Play, HelpCircle } from "lucide-react";
 import { UserMenu } from "@/components/ui/user-menu";
+import { useNextStep } from "nextstepjs";
 
 interface TopbarProps {
   promptName: string;
@@ -24,6 +25,7 @@ export function WorkspaceTopbar({
   used,
   limit,
 }: TopbarProps) {
+  const { startNextStep } = useNextStep();
   const atLimit = limit !== null && used >= limit;
   const nearLimit = limit !== null && !atLimit && used / limit >= 0.8;
 
@@ -63,6 +65,7 @@ export function WorkspaceTopbar({
           onClick={onExport}
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#ffffff] hover:bg-[#f4f4f5] border border-[#e4e4e7] rounded-lg text-xs font-medium transition-colors"
           title="Export prompt as Markdown"
+          data-nextstep="export-btn"
         >
           <Download size={13} />
           Export
@@ -72,9 +75,18 @@ export function WorkspaceTopbar({
           onClick={onRun}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#7c5cfc] hover:bg-[#6a4fe4] text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           title="Run in Test tab"
+          data-nextstep="run-btn"
         >
           <Play size={11} fill="currentColor" />
           Run
+        </button>
+
+        <button
+          onClick={() => startNextStep("workspace-tour")}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#ffffff] hover:bg-[#f4f4f5] border border-[#e4e4e7] rounded-lg text-xs font-medium transition-colors"
+          title="Take a tour of the workspace"
+        >
+          <HelpCircle size={13} />
         </button>
 
         <div className="w-px h-5 bg-[#e4e4e7]" />

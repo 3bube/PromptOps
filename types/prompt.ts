@@ -37,3 +37,10 @@ export interface VersionEntry {
   label: string | null;
   created_at: string;
 }
+
+export interface QuotaData {
+  plan: string;
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}

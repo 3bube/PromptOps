@@ -69,6 +69,7 @@ export function WorkspaceSidebar({
     <div
       className="border-r border-[#e4e4e7] bg-[#fafafa] flex flex-col shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden"
       style={{ width: collapsed ? 56 : 240 }}
+      data-nextstep="sidebar"
     >
       {/* Brand header */}
       <div
